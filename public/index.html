@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Castle Gateway — Pay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0d14;
+  --surface: #111520;
+  --surface2: #181d2e;
+  --border: rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.12);
+  --blue: #2d8cf0;
+  --blue-glow: rgba(45,140,240,.25);
+  --green: #00d68f;
+  --green-glow: rgba(0,214,143,.2);
+  --red: #ff4d4f;
+  --text: #f0f4ff;
+  --muted: #5a6480;
+  --muted2: #8892aa;
+  --gold: #f0b429;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 40px;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(45,140,240,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,140,240,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; opacity: .5; }
+.orb-1 { width: 300px; height: 300px; background: rgba(45,140,240,.18); top: -80px; right: -60px; }
+.orb-2 { width: 200px; height: 200px; background: rgba(0,214,143,.12); bottom: 40px; left: -60px; }
+
+.wrap { width: 100%; max-width: 420px; position: relative; z-index: 1; }
+
+.header { text-align: center; margin-bottom: 24px; animation: fadeDown .5s ease both; }
+.header-logo {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 12px;
+  padding: 8px 16px; margin-bottom: 14px; font-size: 13px; font-weight: 700;
+  letter-spacing: .04em; color: var(--muted2);
+}
+.header-logo span { font-size: 18px; }
+.header h1 { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
+.header h1 em { font-style: normal; color: var(--blue); }
+.header p { font-size: 13px; color: var(--muted2); margin-top: 4px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; animation: fadeUp .5s .1s ease both; }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+.tab {
+  flex: 1; padding: 14px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--muted); background: none; border: none; cursor: pointer; transition: all .2s;
+  letter-spacing: .02em; position: relative;
+}
+.tab.active { color: var(--blue); }
+.tab.active::after {
+  content: ''; position: absolute; bottom: 0; left: 16px; right: 16px;
+  height: 2px; background: var(--blue); border-radius: 2px 2px 0 0;
+}
+
+.panel { display: none; padding: 20px; }
+.panel.active { display: block; }
+
+.field { margin-bottom: 14px; }
+.field label {
+  display: block; font-size: 10.5px; font-weight: 700; color: var(--muted2);
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;
+}
+.field input {
+  width: 100%; background: var(--surface2); border: 1.5px solid var(--border2);
+  border-radius: 10px; padding: 12px 14px; font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px; color: var(--text); transition: border .2s, box-shadow .2s; outline: none;
+}
+.field input::placeholder { color: var(--muted); }
+.field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.field input.amount-inp { font-size: 26px; font-weight: 600; padding: 14px; text-align: center; letter-spacing: .02em; }
+.rupee-wrap { position: relative; }
+.rupee-wrap::before {
+  content: '₹'; position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: var(--muted2); pointer-events: none; font-family: sans-serif;
+}
+.rupee-wrap input { padding-left: 34px; }
+
+.btn-row { display: flex; gap: 8px; margin-bottom: 4px; }
+.submit-btn {
+  width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none;
+  border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all .2s; box-shadow: 0 4px 20px var(--blue-glow); letter-spacing: .02em;
+}
+.submit-btn:hover { background: #3d9bf5; transform: translateY(-1px); }
+.submit-btn:active { transform: translateY(0); }
+.submit-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; box-shadow: none; transform: none; }
+.submit-btn.ghost {
+  flex: 0 0 auto; padding: 10px 14px; font-size: 12px;
+  background: var(--surface2); box-shadow: none; color: var(--muted2);
+  border: 1px solid var(--border2); width: auto;
+}
+.submit-btn.ghost:hover { background: var(--surface); color: var(--text); transform: none; }
+
+.result-box { display: none; margin-top: 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; padding: 14px; }
+.result-box.success { border-color: var(--green); background: rgba(0,214,143,.06); }
+.result-box.error   { border-color: var(--red);   background: rgba(255,77,79,.06); }
+.result-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; color: var(--muted2); }
+.result-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.result-row:last-child { border: none; }
+.result-key { color: var(--muted2); }
+.result-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; word-break: break-all; text-align: right; max-width: 65%; }
+.result-val.green { color: var(--green); }
+.result-val.red   { color: var(--red); }
+.result-val.blue  { color: var(--blue); }
+
+.pay-link-row {
+  display: flex; align-items: center; gap: 8px; background: var(--bg);
+  border: 1px solid var(--border2); border-radius: 9px; padding: 10px 12px; margin-top: 10px;
+}
+.pay-link-text { flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--blue); word-break: break-all; line-height: 1.5; }
+.copy-icon-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 7px; padding: 6px 10px;
+  color: var(--muted2); cursor: pointer; font-size: 12px; font-family: 'Syne', sans-serif;
+  font-weight: 600; flex-shrink: 0; transition: all .15s;
+}
+.copy-icon-btn:hover { color: var(--blue); border-color: var(--blue); }
+.open-btn {
+  width: 100%; margin-top: 10px; padding: 12px; background: rgba(0,214,143,.1);
+  border: 1.5px solid var(--green); border-radius: 10px; color: var(--green);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: all .2s; letter-spacing: .02em;
+}
+.open-btn:hover { background: rgba(0,214,143,.18); box-shadow: 0 4px 16px var(--green-glow); }
+
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+.badge-pending { background: rgba(240,180,41,.1); color: var(--gold);  border: 1px solid rgba(240,180,41,.3); }
+.badge-success { background: rgba(0,214,143,.1);  color: var(--green); border: 1px solid rgba(0,214,143,.3); }
+.badge-failed  { background: rgba(255,77,79,.1);  color: var(--red);   border: 1px solid rgba(255,77,79,.3); }
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+
+.card-footer {
+  background: var(--bg); border-top: 1px solid var(--border); padding: 9px 16px;
+  display: flex; justify-content: center; gap: 14px; font-size: 9.5px;
+  color: var(--muted); font-weight: 600; letter-spacing: .04em;
+}
+.footer-sep { color: var(--border2); }
+
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: var(--bg); padding: 9px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 700; opacity: 0; transition: all .3s;
+  z-index: 999; pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; margin: 0 auto; }
+.spinner.show { display: inline-block; }
+
+@keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:none; } }
+@keyframes fadeUp   { from { opacity:0; transform:translateY(16px);  } to { opacity:1; transform:none; } }
+@keyframes spin     { to { transform: rotate(360deg); } }
+@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-logo"><span>🏰</span> Castle Gateway</div>
+    <h1>UPI <em>Payments</em></h1>
+    <p>Powered by PayTM · BHIM UPI · NPCI</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('create')">Create Order</button>
+      <button class="tab" onclick="switchTab('status')">Check Status</button>
+    </div>
+
+    <!-- CREATE ORDER -->
+    <div class="panel active" id="panel-create">
+      <div class="field">
+        <label>Amount</label>
+        <div class="rupee-wrap">
+          <input type="number" id="create-amount" class="amount-inp" placeholder="0.00" step="0.01" min="1" style="padding-left:34px">
+        </div>
+      </div>
+      <div class="field">
+        <label>Order ID</label>
+        <input type="text" id="create-orderid" placeholder="ORD-001" maxlength="64">
+      </div>
+      <div class="btn-row">
+        <button class="submit-btn ghost" onclick="generateOrderId()">⚡ Auto ID</button>
+        <button class="submit-btn" id="create-btn" onclick="createOrder()">Create &amp; Get Link</button>
+      </div>
+      <div class="result-box" id="create-result"></div>
+    </div>
+
+    <!-- CHECK STATUS -->
+    <div class="panel" id="panel-status">
+      <div class="field">
+        <label>Order ID</label>
+        <input type="text" id="status-orderid" placeholder="ORD-001" maxlength="64"
+          onkeydown="if(event.key==='Enter') checkStatus()">
+      </div>
+      <button class="submit-btn" id="status-btn" onclick="checkStatus()">Check Status</button>
+      <div class="result-box" id="status-result"></div>
+    </div>
+
+    <div class="card-footer">
+      <span>🔒 SSL</span><span class="footer-sep">·</span>
+      <span>BHIM UPI</span><span class="footer-sep">·</span>
+      <span>NPCI Compliant</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['create','status'][i] === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+function generateOrderId() {
+  const ts  = Date.now().toString(36).toUpperCase();
+  const rnd = Math.random().toString(36).substring(2,6).toUpperCase();
+  document.getElementById('create-orderid').value = 'ORD-'+ts+'-'+rnd;
+}
+
+async function createOrder() {
+  const amount   = document.getElementById('create-amount').value.trim();
+  const order_id = document.getElementById('create-orderid').value.trim();
+  const btn      = document.getElementById('create-btn');
+  const resultEl = document.getElementById('create-result');
+
+  if (!amount || parseFloat(amount) <= 0) return showToast('Enter a valid amount');
+  if (!order_id) return showToast('Enter an Order ID');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner show"></span>';
+
+  try {
+    const res  = await fetch('/api/create', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ amount, order_id }),
+    });
+    const data = await res.json();
+
+    resultEl.className     = 'result-box ' + (data.status === 'SUCCESS' ? 'success' : 'error');
+    resultEl.style.display = 'block';
+
+    if (data.status === 'SUCCESS') {
+      resultEl.innerHTML =
+        '<div class="result-label">Order Created</div>'+
+        rrow('Order ID', data.order_id, 'blue')+
+        rrow('Amount',   '₹'+data.amount, 'green')+
+        rrow('Status',   data.status, 'green')+
+        '<div class="pay-link-row">'+
+          '<span class="pay-link-text" id="pay-link-text">'+data.payment_url+'</span>'+
+          '<button class="copy-icon-btn" onclick="copyLink()">Copy</button>'+
+        '</div>'+
+        '<button class="open-btn" onclick="window.open(\''+data.payment_url+'\',\'_blank\')">→ Open Payment Page</button>';
+    } else {
+      resultEl.innerHTML =
+        '<div class="result-label" style="color:var(--red)">Failed</div>'+
+        rrow('Error', data.message, 'red');
+    }
+  } catch(e) {
+    resultEl.className = 'result-box error';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<div class="result-label" style="color:var(--red)">Network Error</div><div style="font-size:12px;color:var(--muted2);margin-top:4px">Could not reach server</div>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Create & Get Link';
+}
+
+async function checkStatus() {
+  const order_id = document.getElementById('status-orderid').value.trim();
+  const btn      = document.getElementById('status-btn');
+  const resultEl = document.getElementById('status-result');
+
+  if (!order_id) return showToast('Enter an Order ID');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner show"></span>';
+
+  try {
+    const res  = await fetch('/api/status?order_id=' + encodeURIComponent(order_id));
+    const data = await res.json();
+
+    const notFound = data.status === 'FAILED' && !data.order_id;
+    resultEl.className     = 'result-box ' + (data.status === 'SUCCESS' ? 'success' : notFound ? 'error' : '');
+    resultEl.style.display = 'block';
+
+    if (notFound) {
+      resultEl.innerHTML =
+        '<div class="result-label" style="color:var(--red)">Not Found</div>'+
+        rrow('Error', data.message, 'red');
+    } else {
+      resultEl.innerHTML =
+        '<div class="result-label">Order Details</div>'+
+        rrow('Order ID', data.order_id, 'blue')+
+        rrow('Amount',   '₹'+data.amount)+
+        '<div class="result-row"><span class="result-key">Status</span>'+badgeHtml(data.status)+'</div>'+
+        (data.UTR ? rrow('UTR / Ref', data.UTR, 'green') : '')+
+        rrow('Mode',   data.merchantDetails?.mode || '—')+
+        rrow('Added',  fmtDate(data.merchantDetails?.added_on))+
+        (data.merchantDetails?.settled_at ? rrow('Settled', fmtDate(data.merchantDetails.settled_at)) : '');
+    }
+  } catch(e) {
+    resultEl.className = 'result-box error';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<div class="result-label" style="color:var(--red)">Network Error</div>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Check Status';
+}
+
+function rrow(k, v, cls) {
+  return '<div class="result-row"><span class="result-key">'+k+'</span><span class="result-val'+(cls?' '+cls:'')+'">'+(v||'—')+'</span></div>';
+}
+function badgeHtml(status) {
+  const map = { SUCCESS:'badge-success', PENDING:'badge-pending', FAILED:'badge-failed' };
+  return '<span class="status-badge '+(map[status]||'badge-pending')+'"><span class="badge-dot"></span>'+status+'</span>';
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); } catch { return iso; }
+}
+function copyLink() {
+  const url = document.getElementById('pay-link-text')?.textContent;
+  if (url) { navigator.clipboard?.writeText(url).catch(()=>{}); showToast('Link copied!'); }
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+generateOrderId();
+</script>
+</body>
+</html>
